@@ -22,6 +22,8 @@ import System.Exit        (exitSuccess)
 import System.Environment (getArgs)
 import Data.Tuple
 
+
+-- | Mail loop, handles errors and reads the playfield.
 readAll :: Either StateError State -> IO (Either StateError State)
 readAll (Left (DivByZeroError (r,c))) =
     error $ "ERROR at (" ++ show r ++ "," ++ show c
