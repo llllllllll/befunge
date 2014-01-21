@@ -175,7 +175,7 @@ pSetDir pDir st = st { dir = pDir }
 -- | Pop a value, start moving left if it is non-zero, otherwise move right.
 -- '_'
 pCheckLeft :: State -> Either StateError State
-pCheckLeft (State {stack = []}) = Left EmptyStackError
+pCheckLeft st@(State {stack = []}) = Right $ pRight st
 pCheckLeft st = let a = head . stack $ st
                 in Right st { stack = tail . stack $ st
                             , dir   = if a == 0
@@ -185,7 +185,7 @@ pCheckLeft st = let a = head . stack $ st
 -- | Pop a value, start moving up if it is non-zero, otherwise move down.
 -- '|'
 pCheckUp :: State -> Either StateError State
-pCheckUp (State {stack = []}) = Left EmptyStackError
+pCheckUp st@(State {stack = []}) = Right $ pDown st
 pCheckUp st = let a = head . stack $ st
                 in Right st { stack = tail . stack $ st
                             , dir   = if a == 0

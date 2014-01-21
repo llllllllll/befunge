@@ -19,13 +19,13 @@ import Data.Array.IO       (IOUArray,newArray,writeArray)
 
 -- | Reads a new state from a string.
 stateFromSource :: String -> IO State
-stateFromSource cs = newArray ((0,0),(79,24)) 32
+stateFromSource cs = newArray ((0,0),(24,79)) 32
                      >>= iter 0 0 cs
                      >>= newStateFromArr
   where
       iter _ _ [] arr        = return arr
-      iter x y ('\n':cs) arr = iter 0 (y + 1) cs arr
-      iter x y (c:cs) arr    = writeArray arr (x,y) (charToWord c) >>
+      iter _ y ('\n':cs) arr = iter 0 (y + 1) cs arr
+      iter x y (c:cs) arr    = writeArray arr (y,x) (charToWord c) >>
                                iter (x + 1) y cs arr
 
 -- | Reads a new state from a file.

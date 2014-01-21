@@ -20,6 +20,7 @@ import Control.Monad      (void)
 import Data.Array.MArray  (readArray)
 import System.Exit        (exitSuccess)
 import System.Environment (getArgs)
+import Data.Tuple
 
 readAll :: Either StateError State -> IO (Either StateError State)
 readAll (Left EmptyStackError  ) =
@@ -33,10 +34,7 @@ readAll (Left InvalidInputError) =
 readAll (Right st)               = readNext (incPointer st) >>= readAll
 
 -- | Reads the next 'State' or any 'StateError's that may have occured.
-readNext st@(State{isString = True}) = (case stack st of
-                                            [] -> return ()
-                                            (n:ns) -> print n) >>
-                                       readArray (playfield st) (loc st)
+readNext st@(State{isString = True}) = readArray (playfield st) (loc st)
                                        >>= \c -> return $ Right
                                                  $ if c == charToWord '"'
                                                      then st {isString = False}
@@ -74,15 +72,15 @@ parseCommand '~' st = sInputChar st
 parseCommand ' ' st = return $ Right . id $ st
 parseCommand '@' st = exitSuccess
 parseCommand n st
-    | n >= '0' && n <= '9' = return $ Right $ sPush (charToWord n) st
+    | n >= '0' && n <= '9' = return $ Right $ sPush (read [n]) st
     | otherwise = return $ Left InvalidInputError
 
 -- | Increments the pointer of the 'State' based on the 'Direction'.
 incPointer :: State -> State
-incPointer st@(State {dir = PUp})    = st { loc = (id *** flip (-) 1) $ loc st }
-incPointer st@(State {dir = PDown})  = st { loc = (id *** (+) 1) $ loc st }
-incPointer st@(State {dir = PLeft})  = st { loc = (flip (-) 1 *** id) $ loc st }
-incPointer st@(State {dir = PRight}) = st { loc = ((+) 1 *** id) $ loc st}
+incPointer st@(State {dir = PUp})    = st { loc = (flip (-) 1 *** id) $ loc st }
+incPointer st@(State {dir = PDown})  = st { loc = ((+) 1 *** id) $ loc st }
+incPointer st@(State {dir = PLeft})  = st { loc = (id *** flip (-) 1) $ loc st }
+incPointer st@(State {dir = PRight}) = st { loc = (id *** (+) 1) $ loc st}
 
 main :: IO ()
 main = getArgs

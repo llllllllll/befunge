@@ -21,13 +21,13 @@ module Befunge.Data
     ) where
 
 import Data.Word     (Word8)
-import Data.Array.IO (IOUArray,newArray)
+import Data.Array.IO (IOArray,newArray)
 import Unsafe.Coerce
 
 -- | The program state.
 data State = State { loc       :: (Word8,Word8)
                    , dir       :: PDirection
-                   , playfield :: IOUArray (Word8,Word8) Word8
+                   , playfield :: IOArray (Word8,Word8) Word8
                    , stack     :: [Word8]
                    , isString  :: Bool
                    }
@@ -39,7 +39,7 @@ instance Show State where
 -- | A new state with a playfield of all spaces.
 newState :: IO State
 newState = newArray ((0,0),(79,24)) 32  >>= \arr ->
-           return State { loc       = (-1,0)
+           return State { loc       = (0,0)
                         , dir       = PRight
                         , playfield = arr
                         , stack     = []
@@ -47,8 +47,8 @@ newState = newArray ((0,0),(79,24)) 32  >>= \arr ->
                         }
 
 -- | A new state with a supplied playfield.
-newStateFromArr :: IOUArray (Word8,Word8) Word8 -> IO State
-newStateFromArr arr = return State { loc       = (-1,0)
+newStateFromArr :: IOArray (Word8,Word8) Word8 -> IO State
+newStateFromArr arr = return State { loc       = (0,0)
                                    , dir       = PRight
                                    , playfield = arr
                                    , stack     = []
