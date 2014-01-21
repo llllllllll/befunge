@@ -1,7 +1,7 @@
 befunge
 =======
 
-A befunge interpreter in haskell.
+A Befunge-93 interpreter in haskell by Joe Jevnik.
 
 
 TODO:
@@ -9,4 +9,4 @@ TODO:
 
 - Reading an EOF from stdin still throws the haskell getChar stding error.
 
-- More test cases, test g and p.
+- More features.
