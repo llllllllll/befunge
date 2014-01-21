@@ -62,32 +62,32 @@ sPush n st = st { stack = n : stack st }
 -- | Adds the top 2 elements on the stack pushing the result.
 -- '+'
 sAdd :: State -> Either StateError State
-sAdd (State {stack = [] }) = Left EmptyStackError
-sAdd (State {stack = [_]}) = Left EmptyStackError
+sAdd st@(State {stack = [] }) = Right st { stack = [0] }
+sAdd st@(State {stack = [_]}) = Right st
 sAdd st = let [b,a] = take 2 $ stack st
           in Right st { stack = a + b : (drop 2 $ stack st) }
 
 -- | Subtracts the top 2 elements on the stack pushing the result.
 -- '-'
 sSub :: State -> Either StateError State
-sSub (State {stack = [] }) = Left EmptyStackError
-sSub (State {stack = [_]}) = Left EmptyStackError
+sSub st@(State {stack = [] }) = Right st { stack = [0] }
+sSub st@(State {stack = [_]}) = Right st
 sSub st = let [b,a] = take 2 $ stack st
           in Right st { stack = b - a : (drop 2 $ stack st) }
 
 -- | Multiplies the top 2 elements on the stack pushing the result.
 -- '*'
 sMul :: State -> Either StateError State
-sMul (State {stack = [] }) = Left EmptyStackError
-sMul (State {stack = [_]}) = Left EmptyStackError
+sMul st@(State {stack = [] }) = Right st { stack = [0] }
+sMul st@(State {stack = [_]}) = Right st { stack = [0] }
 sMul st = let [b,a] = take 2 $ stack st
           in Right st { stack = b * a : (drop 2 $ stack st) }
 
 -- | Divides the top 2 elements on the stack pushing the result.
 -- '/'
 sDiv :: State -> Either StateError State
-sDiv (State {stack = [] }) = Left EmptyStackError
-sDiv (State {stack = [_]}) = Left EmptyStackError
+sDiv (State {stack = [] }) = Left DivByZeroError
+sDiv (State {stack = [_]}) = Left DivByZeroError
 sDiv st = let [b,a] = take 2 $ stack st
           in if b == 0
                then Left DivByZeroError
@@ -96,8 +96,8 @@ sDiv st = let [b,a] = take 2 $ stack st
 -- | Mods the top 2 elements on the stack pushing the result.
 -- '%'
 sMod :: State -> Either StateError State
-sMod (State {stack = [] }) = Left EmptyStackError
-sMod (State {stack = [_]}) = Left EmptyStackError
+sMod (State {stack = [] }) = Left DivByZeroError
+sMod (State {stack = [_]}) = Left DivByZeroError
 sMod st = let [b,a] = take 2 $ stack st
           in if b == 0
                then Left DivByZeroError
@@ -106,8 +106,10 @@ sMod st = let [b,a] = take 2 $ stack st
 -- | Pushes 1 if b > a otherwise pushes 0.
 -- '`'
 sGT  :: State -> Either StateError State
-sGT  (State {stack = [] }) = Left EmptyStackError
-sGT  (State {stack = [_]}) = Left EmptyStackError
+sGT  st@(State {stack = [] }) = Right st
+sGT  st@(State {stack = [n]}) = Right st { stack = if n > 0
+                                                     then [1]
+                                                     else [0] }
 sGT  st = let [b,a] = take 2 $ stack st
           in Right st { stack = (if b > a
                                    then 1
@@ -116,8 +118,8 @@ sGT  st = let [b,a] = take 2 $ stack st
 -- | Pops a and b and swaps them.
 -- '\'
 sSwap :: State -> Either StateError State
-sSwap (State {stack = [] }) = Left EmptyStackError
-sSwap (State {stack = [_]}) = Left EmptyStackError
+sSwap st@(State {stack = [] }) = Right st
+sSwap st@(State {stack = [_]}) = Right st
 sSwap st = let [b,a] = take 2 $ stack st
            in Right st { stack = a : b : (drop 2 $ stack st) }
 
@@ -127,7 +129,7 @@ sSwap st = let [b,a] = take 2 $ stack st
 -- | Pops the top value and pushes 1 if it is 0, or 0 otherwise.
 -- '!'
 sNot :: State -> Either StateError State
-sNot (State {stack = []}) = Left EmptyStackError
+sNot st@(State {stack = []}) = Right st { stack = [1] }
 sNot st = let a = head $ stack st
           in Right st { stack = (if a == 0
                                    then 1
@@ -136,13 +138,13 @@ sNot st = let a = head $ stack st
 -- | Pops a value from the stack and discards it.
 -- '$'
 sPop :: State -> Either StateError State
-sPop (State {stack = []}) = Left EmptyStackError
+sPop st@(State {stack = []}) = Right st
 sPop st = Right st { stack = tail $ stack st }
 
 -- | Duplicates the top value on the stack.
 -- ':'
 sDup :: State -> Either StateError State
-sDup (State {stack = []}) = Left EmptyStackError
+sDup st@(State {stack = []}) = Right st
 sDup st = Right st { stack = (head $ stack st) : stack st }
 
 -- -----------------------------------------------------------------------------
@@ -209,13 +211,13 @@ pRand st = getDir <$> getStdRandom (randomR (0 :: Int,3 :: Int))
 -- | Pops the top value and prints it as an Int (Word8).
 -- '.'
 sPrintInt :: State -> IO (Either StateError State)
-sPrintInt (State {stack = []}) = return $  Left EmptyStackError
+sPrintInt st@(State {stack = []}) = putStr "0" >> return (Right st)
 sPrintInt st = putStr (show . head . stack $ st) >> return (sPop st)
 
 -- | Pops the top value and prints it as a Char.
 -- ','
 sPrintChar :: State -> IO (Either StateError State)
-sPrintChar (State {stack = []}) = return $ Left EmptyStackError
+sPrintChar st@(State {stack = []}) = putStr "\0" >> return (Right st)
 sPrintChar st = putStr ([wordToChar . head . stack $ st])
                 >> return (sPop st)
 

@@ -16,8 +16,8 @@ module Befunge.Data
     , newStateFromArr -- :: IOUArray (Int,Int) Word8 -> IO State
     , StateError(..)  -- Instances: Show
     , PDirection(..)
-    , wordToChar
-    , charToWord
+    , wordToChar      -- :: Word8 -> Char
+    , charToWord      -- :: Char -> Word8
     ) where
 
 import Data.Word     (Word8)
@@ -38,7 +38,7 @@ instance Show State where
 
 -- | A new state with a playfield of all spaces.
 newState :: IO State
-newState = newArray ((0,0),(79,24)) 32  >>= \arr ->
+newState = newArray ((0,0),(24,79)) 32  >>= \arr ->
            return State { loc       = (0,0)
                         , dir       = PRight
                         , playfield = arr

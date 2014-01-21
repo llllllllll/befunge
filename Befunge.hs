@@ -9,7 +9,7 @@
 --
 -- A befunge interpreter.
 
-module Befunge where
+module Main where
 
 import Befunge.Data
 import Befunge.Operations
@@ -77,10 +77,22 @@ parseCommand n st
 
 -- | Increments the pointer of the 'State' based on the 'Direction'.
 incPointer :: State -> State
-incPointer st@(State {dir = PUp})    = st { loc = (flip (-) 1 *** id) $ loc st }
-incPointer st@(State {dir = PDown})  = st { loc = ((+) 1 *** id) $ loc st }
-incPointer st@(State {dir = PLeft})  = st { loc = (id *** flip (-) 1) $ loc st }
-incPointer st@(State {dir = PRight}) = st { loc = (id *** (+) 1) $ loc st}
+incPointer st@(State {dir = PUp}) =
+    st { loc = case loc st of
+                   (0,c) -> (24,c)
+                   l     -> (flip (-) 1 *** id) l }
+incPointer st@(State {dir = PDown}) =
+    st { loc = case loc st of
+                   (24,c) -> (0,c)
+                   l      -> ((+) 1 *** id) l }
+incPointer st@(State {dir = PLeft}) =
+    st { loc = case loc st of
+                   (r,0) -> (r,79)
+                   l     -> (id *** flip (-) 1) l }
+incPointer st@(State {dir = PRight}) =
+    st { loc = case loc st of
+                   (r,79) -> (r,0)
+                   l      -> (id *** (+) 1) l }
 
 main :: IO ()
 main = getArgs
