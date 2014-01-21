@@ -49,24 +49,24 @@ readNext st = readArray (playfield st) (loc st)
 
 -- | Reads a symbol and applies the proper function.
 parseCommand :: Char -> State -> IO (Either StateError State)
-parseCommand '+' st = return $ sAdd st
-parseCommand '-' st = return $ sSub st
-parseCommand '*' st = return $ sMul st
+parseCommand '+' st = return $ Right $ sAdd st
+parseCommand '-' st = return $ Right $ sSub st
+parseCommand '*' st = return $ Right $ sMul st
 parseCommand '/' st = return $ sDiv st
 parseCommand '%' st = return $ sMod st
-parseCommand '!' st = return $ sNot st
-parseCommand '`' st = return $ sGT  st
+parseCommand '!' st = return $ Right $ sNot st
+parseCommand '`' st = return $ Right $ sGT  st
 parseCommand '>' st = return $ Right . pRight $ st
 parseCommand '<' st = return $ Right . pLeft  $ st
 parseCommand '^' st = return $ Right . pUp    $ st
 parseCommand 'v' st = return $ Right . pDown  $ st
 parseCommand '?' st = pRand st
-parseCommand '_' st = return $ pCheckLeft st
-parseCommand '|' st = return $ pCheckUp st
+parseCommand '_' st = return $ Right $ pCheckLeft st
+parseCommand '|' st = return $ Right $ pCheckUp st
 parseCommand '"' st = return $ Right . (\st -> st { isString = True }) $ st
-parseCommand ':' st = return $ sDup st
-parseCommand '\\'st = return $ sSwap st
-parseCommand '$' st = return $ sPop st
+parseCommand ':' st = return $ Right $ sDup st
+parseCommand '\\'st = return $ Right $ sSwap st
+parseCommand '$' st = return $ Right $ sPop st
 parseCommand '.' st = sPrintInt st
 parseCommand ',' st = sPrintChar st
 parseCommand '#' st = return $ Right . incPointer $ st
