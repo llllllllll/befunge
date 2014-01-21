@@ -247,7 +247,8 @@ fPut (State {stack = [_,_]}) = return $ Left EmptyStackError
 fPut st = let [y,x,v] = take 3 $ stack st
           in if x > 79 || y > 24
                then return $ Left OutOfBoundsError
-               else writeArray (playfield st) (x,y) v >> return (Right st)
+               else writeArray (playfield st) (y,x) v
+                        >> return (Right st { stack = drop 3 $ stack st })
 
 -- | Get a Char out of the playfield.
 -- 'g'
@@ -257,5 +258,5 @@ fGet (State {stack = [_]}) = return $ Left EmptyStackError
 fGet st = let [y,x] = take 2 $ stack st
           in if x > 79 || y > 24
                then return $ Left OutOfBoundsError
-               else readArray (playfield st) (x,y)
-                        >>= \v -> return (Right st { stack = v : stack st })
+               else readArray (playfield st) (y,x) >>=
+                 \v -> return (Right st { stack = v : (drop 2 $ stack st) })
