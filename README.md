@@ -4,8 +4,9 @@ befunge
 A befunge interpreter in haskell.
 
 
-NOTE:
+TODO:
 =====
 
-This is not a working copy yet, there are issues with the stack pushing the
-proper values.
+- Reading an EOF from stdin still throws the haskell getChar stding error.
+
+- More test cases, test g and p.
