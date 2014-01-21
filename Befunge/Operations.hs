@@ -44,7 +44,8 @@ module Befunge.Operations
 import Befunge.Data
 
 import Control.Applicative ((<$>))
-import Data.Array.MArray
+import Control.Monad       (liftM)
+import Data.Array.MArray   (writeArray,readArray)
 import System.Random       (randomR,getStdRandom)
 import Text.Read           (readMaybe)
 
@@ -65,7 +66,7 @@ sAdd :: State -> Either StateError State
 sAdd st@(State {stack = [] }) = Right st { stack = [0] }
 sAdd st@(State {stack = [_]}) = Right st
 sAdd st = let [b,a] = take 2 $ stack st
-          in Right st { stack = a + b : (drop 2 $ stack st) }
+          in Right st { stack = a + b : drop 2 (stack st) }
 
 -- | Subtracts the top 2 elements on the stack pushing the result.
 -- '-'
@@ -73,7 +74,7 @@ sSub :: State -> Either StateError State
 sSub st@(State {stack = [] }) = Right st { stack = [0] }
 sSub st@(State {stack = [_]}) = Right st
 sSub st = let [b,a] = take 2 $ stack st
-          in Right st { stack = b - a : (drop 2 $ stack st) }
+          in Right st { stack = b - a : drop 2 (stack st) }
 
 -- | Multiplies the top 2 elements on the stack pushing the result.
 -- '*'
@@ -81,7 +82,7 @@ sMul :: State -> Either StateError State
 sMul st@(State {stack = [] }) = Right st { stack = [0] }
 sMul st@(State {stack = [_]}) = Right st { stack = [0] }
 sMul st = let [b,a] = take 2 $ stack st
-          in Right st { stack = b * a : (drop 2 $ stack st) }
+          in Right st { stack = b * a : drop 2 (stack st) }
 
 -- | Divides the top 2 elements on the stack pushing the result.
 -- '/'
@@ -91,7 +92,7 @@ sDiv st@(State {stack = [_]}) = Left $ DivByZeroError (loc st)
 sDiv st = let [b,a] = take 2 $ stack st
           in if b == 0
                then Left (DivByZeroError (loc st))
-               else Right st { stack = b `div` a : (drop 2 $ stack st) }
+               else Right st { stack = b `div` a : drop 2 (stack st) }
 
 -- | Mods the top 2 elements on the stack pushing the result.
 -- '%'
@@ -101,7 +102,7 @@ sMod st@(State {stack = [_]}) = Left $ DivByZeroError (loc st)
 sMod st = let [b,a] = take 2 $ stack st
           in if b == 0
                then Left $ DivByZeroError (loc st)
-               else Right st { stack = b `mod` a : (drop 2 $ stack st) }
+               else Right st { stack = b `mod` a : drop 2 ( stack st) }
 
 -- | Pushes 1 if b > a otherwise pushes 0.
 -- '`'
@@ -113,7 +114,7 @@ sGT  st@(State {stack = [n]}) = Right st { stack = if n > 0
 sGT  st = let [b,a] = take 2 $ stack st
           in Right st { stack = (if b > a
                                    then 1
-                                   else 0) : (drop 2 $ stack st) }
+                                   else 0) : drop 2 (stack st) }
 
 -- | Pops a and b and swaps them.
 -- '\'
@@ -121,7 +122,7 @@ sSwap :: State -> Either StateError State
 sSwap st@(State {stack = [] }) = Right st
 sSwap st@(State {stack = [_]}) = Right st
 sSwap st = let [b,a] = take 2 $ stack st
-           in Right st { stack = a : b : (drop 2 $ stack st) }
+           in Right st { stack = a : b : drop 2 (stack st) }
 
 -- -----------------------------------------------------------------------------
 -- Unary operations.
@@ -133,7 +134,7 @@ sNot st@(State {stack = []}) = Right st { stack = [1] }
 sNot st = let a = head $ stack st
           in Right st { stack = (if a == 0
                                    then 1
-                                   else 0) : (tail $ stack st) }
+                                   else 0) : tail (stack st) }
 
 -- | Pops a value from the stack and discards it.
 -- '$'
@@ -145,7 +146,7 @@ sPop st = Right st { stack = tail $ stack st }
 -- ':'
 sDup :: State -> Either StateError State
 sDup st@(State {stack = []}) = Right st
-sDup st = Right st { stack = (head $ stack st) : stack st }
+sDup st = Right st { stack = head (stack st) : stack st }
 
 -- -----------------------------------------------------------------------------
 -- Pointer operations.
@@ -197,8 +198,8 @@ pCheckUp st = let a = head . stack $ st
 -- | Start moving in a random direction.
 -- '?'
 pRand :: State -> IO (Either StateError State)
-pRand st = getDir <$> getStdRandom (randomR (0 :: Int,3 :: Int))
-           >>= return . Right . flip pSetDir st
+pRand st = liftM (Right . flip pSetDir st)
+           (getDir <$> getStdRandom (randomR (0 :: Int,3 :: Int)))
   where
       getDir 0 = PUp
       getDir 1 = PDown
@@ -218,13 +219,13 @@ sPrintInt st = putStr (show . head . stack $ st) >> return (sPop st)
 -- ','
 sPrintChar :: State -> IO (Either StateError State)
 sPrintChar st@(State {stack = []}) = putStr "\0" >> return (Right st)
-sPrintChar st = putStr ([wordToChar . head . stack $ st])
+sPrintChar st = putStr [wordToChar . head . stack $ st]
                 >> return (sPop st)
 
 -- | Ask a user to input an integer value mod 256.
 -- '&'
 sInputInt :: State -> IO (Either StateError State)
-sInputInt st = readMaybe . (\c -> [c]) <$> getChar >>= \n ->
+sInputInt st = readMaybe . (:[]) <$> getChar >>= \n ->
                case n of
                    Nothing -> return $ Left $ InvalidInputError
                               (maybe ' ' wordToChar n) (loc st)
@@ -266,4 +267,4 @@ fGet' :: State -> Word8 -> Word8 -> IO (Either StateError State)
 fGet' st y x = if x > 79 || y > 24
                then return $ Left $ OutOfBoundsError (y,x) (loc st)
                else readArray (playfield st) (y,x) >>=
-                 \v -> return (Right st { stack = v : (drop 2 $ stack st) })
+                 \v -> return (Right st { stack = v : drop 2 (stack st) })

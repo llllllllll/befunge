@@ -20,8 +20,8 @@ module Befunge.Data
     , charToWord      -- :: Char -> Word8
     ) where
 
-import Data.Word     (Word8)
 import Data.Array.IO (IOArray,newArray)
+import Data.Word     (Word8)
 import Unsafe.Coerce
 
 -- | The program state.

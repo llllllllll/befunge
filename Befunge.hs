@@ -15,9 +15,10 @@ import Befunge.Data
 import Befunge.Operations
 import Befunge.Parser
 
-import Control.Arrow      ((***))
+import Control.Arrow      (first,second)
 import Control.Monad      (void)
 import Data.Array.MArray  (readArray)
+import Data.Char          (isDigit)
 import System.Exit        (exitSuccess)
 import System.Environment (getArgs)
 import Data.Tuple
@@ -76,7 +77,7 @@ parseCommand '~' st = sInputChar st
 parseCommand ' ' st = return $ Right . id $ st
 parseCommand '@' st = exitSuccess
 parseCommand n st
-    | n >= '0' && n <= '9' = return $ Right $ sPush (read [n]) st
+    | isDigit n = return $ Right $ sPush (read [n]) st
     | otherwise = return $ Left $ InvalidInputError n (loc st)
 
 -- | Increments the pointer of the 'State' based on the 'Direction'.
@@ -84,19 +85,19 @@ incPointer :: State -> State
 incPointer st@(State {dir = PUp}) =
     st { loc = case loc st of
                    (0,c) -> (24,c)
-                   l     -> (flip (-) 1 *** id) l }
+                   l     -> first (flip (-) 1) l }
 incPointer st@(State {dir = PDown}) =
     st { loc = case loc st of
                    (24,c) -> (0,c)
-                   l      -> ((+) 1 *** id) l }
+                   l      -> first ((+) 1) l }
 incPointer st@(State {dir = PLeft}) =
     st { loc = case loc st of
                    (r,0) -> (r,79)
-                   l     -> (id *** flip (-) 1) l }
+                   l     -> second (flip (-) 1) l }
 incPointer st@(State {dir = PRight}) =
     st { loc = case loc st of
                    (r,79) -> (r,0)
-                   l      -> (id *** (+) 1) l }
+                   l      -> second ((+) 1) l }
 
 main :: IO ()
 main = getArgs
