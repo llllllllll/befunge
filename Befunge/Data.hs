@@ -56,10 +56,9 @@ newStateFromArr arr = return State { loc       = (0,0)
                                    }
 
 -- | The various types of errors that can be thrown.
-data StateError = EmptyStackError
-                | DivByZeroError
-                | OutOfBoundsError
-                | InvalidInputError deriving Show
+data StateError = DivByZeroError   (Word8,Word8)
+                | OutOfBoundsError (Word8,Word8) (Word8,Word8)
+                | InvalidInputError Char (Word8,Word8) deriving Show
 
 -- | A pointer direction.
 data PDirection = PUp | PDown | PLeft | PRight deriving Show

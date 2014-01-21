@@ -23,15 +23,17 @@ import System.Environment (getArgs)
 import Data.Tuple
 
 readAll :: Either StateError State -> IO (Either StateError State)
-readAll (Left EmptyStackError  ) =
-    error "ERROR: Attempted to read from an empty stack."
-readAll (Left DivByZeroError   ) =
-    error "ERROR: Attempted to divide by zero."
-readAll (Left OutOfBoundsError ) =
-    error "ERROR: Attempted to put or get out of bounds."
-readAll (Left InvalidInputError) =
-    error "ERROR: Invalid input."
-readAll (Right st)               = readNext (incPointer st) >>= readAll
+readAll (Left (DivByZeroError (r,c))) =
+    error $ "ERROR at (" ++ show r ++ "," ++ show c
+              ++ "): Attempted to divide by zero."
+readAll (Left (OutOfBoundsError (r,c) (r',c'))) =
+    error $ "ERROR at (" ++ show r ++ "," ++ show c
+              ++ "): Attempted to put or get out of bounds at index: ("
+              ++ show r' ++ "," ++ show c' ++ ")."
+readAll (Left (InvalidInputError ch (r,c))) =
+    error $ "ERROR at (" ++ show r ++ "," ++ show c ++ "): Invalid input: "
+              ++ show ch ++ "."
+readAll (Right st) = readNext (incPointer st) >>= readAll
 
 -- | Reads the next 'State' or any 'StateError's that may have occured.
 readNext st@(State{isString = True}) = readArray (playfield st) (loc st)
@@ -73,7 +75,7 @@ parseCommand ' ' st = return $ Right . id $ st
 parseCommand '@' st = exitSuccess
 parseCommand n st
     | n >= '0' && n <= '9' = return $ Right $ sPush (read [n]) st
-    | otherwise = return $ Left InvalidInputError
+    | otherwise = return $ Left $ InvalidInputError n (loc st)
 
 -- | Increments the pointer of the 'State' based on the 'Direction'.
 incPointer :: State -> State

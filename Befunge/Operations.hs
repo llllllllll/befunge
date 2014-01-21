@@ -86,21 +86,21 @@ sMul st = let [b,a] = take 2 $ stack st
 -- | Divides the top 2 elements on the stack pushing the result.
 -- '/'
 sDiv :: State -> Either StateError State
-sDiv (State {stack = [] }) = Left DivByZeroError
-sDiv (State {stack = [_]}) = Left DivByZeroError
+sDiv st@(State {stack = [] }) = Left $ DivByZeroError (loc st)
+sDiv st@(State {stack = [_]}) = Left $ DivByZeroError (loc st)
 sDiv st = let [b,a] = take 2 $ stack st
           in if b == 0
-               then Left DivByZeroError
+               then Left (DivByZeroError (loc st))
                else Right st { stack = b `div` a : (drop 2 $ stack st) }
 
 -- | Mods the top 2 elements on the stack pushing the result.
 -- '%'
 sMod :: State -> Either StateError State
-sMod (State {stack = [] }) = Left DivByZeroError
-sMod (State {stack = [_]}) = Left DivByZeroError
+sMod st@(State {stack = [] }) = Left $ DivByZeroError (loc st)
+sMod st@(State {stack = [_]}) = Left $ DivByZeroError (loc st)
 sMod st = let [b,a] = take 2 $ stack st
           in if b == 0
-               then Left DivByZeroError
+               then Left $ DivByZeroError (loc st)
                else Right st { stack = b `mod` a : (drop 2 $ stack st) }
 
 -- | Pushes 1 if b > a otherwise pushes 0.
@@ -226,7 +226,8 @@ sPrintChar st = putStr ([wordToChar . head . stack $ st])
 sInputInt :: State -> IO (Either StateError State)
 sInputInt st = readMaybe . (\c -> [c]) <$> getChar >>= \n ->
                case n of
-                   Nothing -> return $ Left InvalidInputError
+                   Nothing -> return $ Left $ InvalidInputError
+                              (maybe ' ' wordToChar n) (loc st)
                    Just v  -> return $ Right st { stack = v : stack st }
 
 -- | Ask a user to input a Char and push its ASCII value.
@@ -241,22 +242,28 @@ sInputChar st = getChar
 -- | Put a Char into the playfield.
 -- 'p'
 fPut :: State -> IO (Either StateError State)
-fPut (State {stack = []   }) = return $ Left EmptyStackError
-fPut (State {stack = [_]  }) = return $ Left EmptyStackError
-fPut (State {stack = [_,_]}) = return $ Left EmptyStackError
+fPut st@(State {stack = []   }) = fPut' st 0 0 0
+fPut st@(State {stack = [y]  }) = fPut' st y 0 0
+fPut st@(State {stack = [y,x]}) = fPut' st y x 0
 fPut st = let [y,x,v] = take 3 $ stack st
-          in if x > 79 || y > 24
-               then return $ Left OutOfBoundsError
+          in fPut' st y x v
+
+fPut' :: State -> Word8 -> Word8 -> Word8 -> IO (Either StateError State)
+fPut' st y x v = if x > 79 || y > 24
+               then return $ Left $ OutOfBoundsError (x,y) (loc st)
                else writeArray (playfield st) (y,x) v
                         >> return (Right st { stack = drop 3 $ stack st })
 
 -- | Get a Char out of the playfield.
 -- 'g'
 fGet :: State -> IO (Either StateError State)
-fGet (State {stack = [] }) = return $ Left EmptyStackError
-fGet (State {stack = [_]}) = return $ Left EmptyStackError
+fGet st@(State {stack = [] }) = fGet' st 0 0
+fGet st@(State {stack = [y]}) = fGet' st y 0
 fGet st = let [y,x] = take 2 $ stack st
-          in if x > 79 || y > 24
-               then return $ Left OutOfBoundsError
+          in fGet' st y x
+
+fGet' :: State -> Word8 -> Word8 -> IO (Either StateError State)
+fGet' st y x = if x > 79 || y > 24
+               then return $ Left $ OutOfBoundsError (y,x) (loc st)
                else readArray (playfield st) (y,x) >>=
                  \v -> return (Right st { stack = v : (drop 2 $ stack st) })
