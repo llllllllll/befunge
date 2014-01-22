@@ -16,7 +16,7 @@ import Befunge.Operations
 import Befunge.Parser
 
 import Control.Arrow      (first,second)
-import Control.Monad      (void)
+import Control.Monad      (void,liftM,(<=<))
 import Data.Array.MArray  (readArray)
 import Data.Char          (isDigit)
 import System.Exit        (exitSuccess)
@@ -29,75 +29,73 @@ readAll :: Either StateError State -> IO (Either StateError State)
 readAll (Left (DivByZeroError (r,c))) =
     error $ "ERROR at (" ++ show r ++ "," ++ show c
               ++ "): Attempted to divide by zero."
-readAll (Left (OutOfBoundsError (r,c) (r',c'))) =
-    error $ "ERROR at (" ++ show r ++ "," ++ show c
-              ++ "): Attempted to put or get out of bounds at index: ("
-              ++ show r' ++ "," ++ show c' ++ ")."
 readAll (Left (InvalidInputError ch (r,c))) =
     error $ "ERROR at (" ++ show r ++ "," ++ show c ++ "): Invalid input: "
               ++ show ch ++ "."
-readAll (Right st) = readNext (incPointer st) >>= readAll
+readAll (Right st) = readNext st >>= readAll . incPointer
 
 -- | Reads the next 'State' or any 'StateError's that may have occured.
+readNext :: State -> IO (Either StateError State)
 readNext st@(State{isString = True}) = readArray (playfield st) (loc st)
                                        >>= \c -> return $ Right
                                                  $ if c == charToWord '"'
                                                      then st {isString = False}
-                                                     else sPush c st
+                                                     else sPush (wordToInt c) st
 readNext st = readArray (playfield st) (loc st)
               >>= \c -> parseCommand (wordToChar c) st
 
 -- | Reads a symbol and applies the proper function.
 parseCommand :: Char -> State -> IO (Either StateError State)
-parseCommand '+' st = return $ Right $ sAdd st
-parseCommand '-' st = return $ Right $ sSub st
-parseCommand '*' st = return $ Right $ sMul st
-parseCommand '/' st = return $ sDiv st
-parseCommand '%' st = return $ sMod st
-parseCommand '!' st = return $ Right $ sNot st
-parseCommand '`' st = return $ Right $ sGT  st
-parseCommand '>' st = return $ Right . pRight $ st
-parseCommand '<' st = return $ Right . pLeft  $ st
-parseCommand '^' st = return $ Right . pUp    $ st
-parseCommand 'v' st = return $ Right . pDown  $ st
-parseCommand '?' st = pRand st
-parseCommand '_' st = return $ Right $ pCheckLeft st
-parseCommand '|' st = return $ Right $ pCheckUp st
-parseCommand '"' st = return $ Right . (\st -> st { isString = True }) $ st
-parseCommand ':' st = return $ Right $ sDup st
-parseCommand '\\'st = return $ Right $ sSwap st
-parseCommand '$' st = return $ Right $ sPop st
-parseCommand '.' st = sPrintInt st
-parseCommand ',' st = sPrintChar st
-parseCommand '#' st = return $ Right . incPointer $ st
-parseCommand 'p' st = fPut st
-parseCommand 'g' st = fGet st
-parseCommand '&' st = sInputInt st
-parseCommand '~' st = sInputChar st
-parseCommand ' ' st = return $ Right . id $ st
-parseCommand '@' st = exitSuccess
-parseCommand n st
-    | isDigit n = return $ Right $ sPush (read [n]) st
-    | otherwise = return $ Left $ InvalidInputError n (loc st)
+parseCommand '+' = return . Right    . sAdd
+parseCommand '-' = return . Right    . sSub
+parseCommand '*' = return . Right    . sMul
+parseCommand '/' = return            . sDiv
+parseCommand '%' = return            . sMod
+parseCommand '!' = return . Right    . sNot
+parseCommand '`' = return . Right    . sGT
+parseCommand '>' = return . Right    . pRight
+parseCommand '<' = return . Right    . pLeft
+parseCommand '^' = return . Right    . pUp
+parseCommand 'v' = return . Right    . pDown
+parseCommand '?' = liftM   (Right $) . pRand
+parseCommand '_' = return . Right    . pCheckLeft
+parseCommand '|' = return . Right    . pCheckUp
+parseCommand '"' = return . Right    . (\st -> st { isString = True })
+parseCommand ':' = return . Right    . sDup
+parseCommand '\\'= return . Right    . sSwap
+parseCommand '$' = return . Right    . sPop
+parseCommand '.' = liftM   (Right $) . sPrintInt
+parseCommand ',' = liftM   (Right $) . sPrintChar
+parseCommand '#' = return            . incPointer . Right
+parseCommand 'p' = liftM   (Right $) . fPut
+parseCommand 'g' = liftM   (Right $) . fGet
+parseCommand '&' =                     sInputInt
+parseCommand '~' = liftM   (Right $) . sInputChar
+parseCommand ' ' = return . Right    . id
+parseCommand '@' = const               exitSuccess
+parseCommand n
+    | isDigit n = return . Right . sPush (read [n])
+    | otherwise = return . Left . InvalidInputError n . loc
 
 -- | Increments the pointer of the 'State' based on the 'Direction'.
-incPointer :: State -> State
-incPointer st@(State {dir = PUp}) =
-    st { loc = case loc st of
-                   (0,c) -> (24,c)
-                   l     -> first (flip (-) 1) l }
-incPointer st@(State {dir = PDown}) =
-    st { loc = case loc st of
-                   (24,c) -> (0,c)
-                   l      -> first ((+) 1) l }
-incPointer st@(State {dir = PLeft}) =
-    st { loc = case loc st of
-                   (r,0) -> (r,79)
-                   l     -> second (flip (-) 1) l }
-incPointer st@(State {dir = PRight}) =
-    st { loc = case loc st of
-                   (r,79) -> (r,0)
-                   l      -> second ((+) 1) l }
+incPointer :: Either StateError State -> Either StateError State
+incPointer e@(Left _) = e
+incPointer (Right st@(State {dir = PUp})) =
+    Right st { loc = case loc st of
+                         (0,c) -> (24,c)
+                         l     -> first (flip (-) 1) l }
+incPointer (Right st@(State {dir = PDown})) =
+    Right st { loc = case loc st of
+                         (24,c) -> (0,c)
+                         l      -> first ((+) 1) l }
+incPointer (Right st@(State {dir = PLeft})) =
+    Right st { loc = case loc st of
+                         (r,0) -> (r,79)
+                         l     -> second (flip (-) 1) l }
+incPointer (Right st@(State {dir = PRight})) =
+    Right st { loc = case loc st of
+                         (r,79) -> (r,0)
+                         l      -> second ((+) 1) l }
 
 main :: IO ()
 main = getArgs
