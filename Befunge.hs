@@ -18,7 +18,7 @@ import Befunge.Operations
 import Befunge.Parser
 
 import Control.Arrow      (first,second)
-import Control.Concurrent (forkIO)
+import Control.Concurrent (MVar,forkFinally,putMVar,newEmptyMVar)
 import Control.Monad      (void,liftM,(<=<))
 import Data.Array.MArray  (readArray)
 import Data.Char          (isDigit)
@@ -61,8 +61,8 @@ parseCommand '<' = return . Right . pLeft
 parseCommand '^' = return . Right . pUp
 parseCommand 'v' = return . Right . pDown
 parseCommand '?' = liftM    Right . pRand
-parseCommand '_' = return . Right . pCheckLeft
-parseCommand '|' = return . Right . pCheckUp
+parseCommand '_' = return . Right . pHorzIf
+parseCommand '|' = return . Right . pVertIf
 parseCommand '"' = return . Right . (\st -> st { isString = True })
 parseCommand ':' = return . Right . sDup
 parseCommand '\\'= return . Right . sSwap
@@ -81,24 +81,25 @@ parseCommand n
     | otherwise  = return . Left  . InvalidInputError n . loc
 
 -- | Increments the pointer of the 'State' based on the 'Direction'.
+-- Accounts for wrapping.
 incPointer :: Either StateError State -> Either StateError State
 incPointer e@(Left _) = e
+incPointer (Right st@(State {dir = PUp,loc = (0,c)})) =
+    Right st { loc = (24,c) }
 incPointer (Right st@(State {dir = PUp})) =
-    Right st { loc = case loc st of
-                         (0,c) -> (24,c)
-                         l     -> first (flip (-) 1) l }
+    Right st { loc = first (flip (-) 1) $ loc st }
+incPointer (Right st@(State {dir = PDown,loc = (24,c)})) =
+    Right st { loc = (0,c) }
 incPointer (Right st@(State {dir = PDown})) =
-    Right st { loc = case loc st of
-                         (24,c) -> (0,c)
-                         l      -> first (+ 1) l }
+    Right st { loc = first (+ 1) $ loc st }
+incPointer (Right st@(State {dir = PLeft,loc = (r,0)})) =
+    Right st { loc = (r,79) }
 incPointer (Right st@(State {dir = PLeft})) =
-    Right st { loc = case loc st of
-                         (r,0) -> (r,79)
-                         l     -> second (flip (-) 1) l }
+    Right st { loc = second (flip (-) 1) $ loc st }
+incPointer (Right st@(State {dir = PRight,loc = (r,79)})) =
+    Right st { loc = (r,0) }
 incPointer (Right st@(State {dir = PRight})) =
-    Right st { loc = case loc st of
-                         (r,79) -> (r,0)
-                         l      -> second (+ 1) l }
+    Right st { loc = second (+ 1) $ loc st }
 
 main :: IO ()
 main = getArgs
@@ -110,8 +111,15 @@ main = getArgs
                             -> putStrLn "runbefunge version 1.0\nBy Joe Jevnik"
                         | otherwise -> void $ stateFromFile n
                                        >>= readAll . Right
-                    --("-c":ps) -> map (forkIO $ readAll . Right <=< stateFromFile) ps
+                    ("-c":ps) -> mapM_ forkBefunge ps
                     _ -> mapM_ (readAll . Right <=< stateFromFile) as
+
+forkBefunge :: FilePath -> IO (MVar ())
+forkBefunge b = do
+    lock <- newEmptyMVar
+    forkFinally (readAll . Right <=< stateFromFile $ b)
+                    (const $ putMVar lock ())
+    return lock
 
 helpString :: String
 helpString =
@@ -121,6 +129,9 @@ my_prog.bf is the path to the program you wish to run.\n\nAlternativly, you \
 may run multiple files at once by passing them in the order\nin which you \
 would like them to be evaluated, for example:\n\n    runbefunge prog1.bf \
 prog2.bf\n\nwould run prog1.bf until its null character is reached and then \
-begin to run prog2.bf. For this reason, it will not evaluate any programs \
-after reaching a program that does not contain a '@' (terminating character). \
-"
+begin to run prog2.bf.\nFor this reason, it will not evaluate any programs \
+after reaching a program that does\nnot contain a '@' (terminating \
+character).\n\nOne can also run a set of befunge-93 programs concurrently by \
+passing the -c flag \nbefore a list like so:\n\n    runbefunge -c prog1.bf \
+prog2.bf\n\nWARNING: You may get butchered output as they will both print to \
+stdout together;\nhowever, only one will consume from stdin."

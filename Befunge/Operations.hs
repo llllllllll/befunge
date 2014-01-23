@@ -30,8 +30,8 @@ module Befunge.Operations
     , pDown      -- :: State -> State
     , pLeft      -- :: State -> State
     , pRight     -- :: State -> State
-    , pCheckLeft -- :: State -> State
-    , pCheckUp   -- :: State -> State
+    , pHorzIf    -- :: State -> State
+    , pVertIf    -- :: State -> State
     , pRand      -- :: State -> IO State
     , sPrintInt  -- :: State -> IO State
     , sPrintChar -- :: State -> IO State
@@ -52,8 +52,8 @@ import Text.Read           (readMaybe)
 -- -----------------------------------------------------------------------------
 --
 
--- | Pushes a char or number litteral onto the stack.
--- "0-9a-zA-Z"
+-- | Pushes a number litteral onto the stack.
+-- "0-9"
 sPush :: Int32 -> State -> State
 sPush n st = st { stack = n : stack st }
 
@@ -63,46 +63,39 @@ sPush n st = st { stack = n : stack st }
 -- | Adds the top 2 elements on the stack pushing the result.
 -- '+'
 sAdd :: State -> State
-sAdd st@(State {stack = [] }) = st { stack = [0]   }
-sAdd st@(State {stack = [n]}) = st { stack = [0,n] }
-sAdd st = let [b,a] = take 2 $ stack st
-          in st { stack = a + b : drop 2 (stack st) }
+sAdd st@(State {stack = [] })      = st { stack = [0]   }
+sAdd st@(State {stack = [n]})      = st { stack = [0,n] }
+sAdd st@(State {stack = (b:a:rs)}) = st { stack = a + b : rs }
 
 -- | Subtracts the top 2 elements on the stack pushing the result.
 -- '-'
 sSub :: State -> State
-sSub st@(State {stack = [] }) = st { stack = [0]   }
-sSub st@(State {stack = [n]}) = st { stack = [n,n] }
-sSub st = let [b,a] = take 2 $ stack st
-          in st { stack = b - a : drop 2 (stack st) }
+sSub st@(State {stack = [] })      = st { stack = [0]   }
+sSub st@(State {stack = [n]})      = st { stack = [n,n] }
+sSub st@(State {stack = (b:a:rs)}) = st { stack = b - a : rs }
 
 -- | Multiplies the top 2 elements on the stack pushing the result.
 -- '*'
 sMul :: State -> State
-sMul st@(State {stack = [] }) = st { stack = [0] }
-sMul st@(State {stack = [_]}) = st { stack = [0] }
-sMul st = let [b,a] = take 2 $ stack st
-          in st { stack = b * a : drop 2 (stack st) }
+sMul st@(State {stack = [] })      = st { stack = [0] }
+sMul st@(State {stack = [_]})      = st { stack = [0] }
+sMul st@(State {stack = (b:a:rs)}) = st { stack = b * a : rs }
 
 -- | Divides the top 2 elements on the stack pushing the result.
 -- '/'
 sDiv :: State -> Either StateError State
-sDiv st@(State {stack = [] }) = Left $ DivByZeroError (loc st)
-sDiv st@(State {stack = [_]}) = Left $ DivByZeroError (loc st)
-sDiv st = let [b,a] = take 2 $ stack st
-          in if b == 0
-               then Left (DivByZeroError (loc st))
-               else Right st { stack = b `div` a : drop 2 (stack st) }
+sDiv st@(State {stack = [] })      = Left $ DivByZeroError (loc st)
+sDiv st@(State {stack = [_]})      = Left $ DivByZeroError (loc st)
+sDiv st@(State {stack = (0:_:_)})  = Left $ DivByZeroError (loc st)
+sDiv st@(State {stack = (b:a:rs)}) = Right st { stack = b `div` a : rs }
 
 -- | Mods the top 2 elements on the stack pushing the result.
 -- '%'
 sMod :: State -> Either StateError State
-sMod st@(State {stack = [] }) = Left $ DivByZeroError (loc st)
-sMod st@(State {stack = [_]}) = Left $ DivByZeroError (loc st)
-sMod st = let [b,a] = take 2 $ stack st
-          in if b == 0
-               then Left $ DivByZeroError (loc st)
-               else Right st { stack = b `mod` a : drop 2 ( stack st) }
+sMod st@(State {stack = [] })      = Left $ DivByZeroError (loc st)
+sMod st@(State {stack = [_]})      = Left $ DivByZeroError (loc st)
+sMod st@(State {stack = (0:_:_)})  = Left $ DivByZeroError (loc st)
+sMod st@(State {stack = (b:a:rs)}) = Right st { stack = b `mod` a : rs }
 
 -- | Pushes 1 if b > a otherwise pushes 0.
 -- '`'
@@ -111,18 +104,16 @@ sGT  st@(State {stack = [] }) = st { stack = [0] }
 sGT  st@(State {stack = [n]}) = st { stack = if 0 > n
                                                then [1]
                                                else [0] }
-sGT  st = let [b,a] = take 2 $ stack st
-          in st { stack = (if a > b
-                             then 1
-                             else 0) : drop 2 (stack st) }
+sGT  st@(State {stack = (b:a:rs)}) = st { stack = (if a > b
+                                                     then 1
+                                                     else 0) : rs }
 
 -- | Pops a and b and swaps them.
 -- '\'
 sSwap :: State -> State
 sSwap st@(State {stack = [] }) =  st
 sSwap st@(State {stack = [n]}) = st { stack = [0,n] }
-sSwap st = let [b,a] = take 2 $ stack st
-           in st { stack = a : b : drop 2 (stack st) }
+sSwap st@(State {stack = (b:a:rs)}) = st { stack = a : b : rs }
 
 -- -----------------------------------------------------------------------------
 -- Unary operations.
@@ -130,11 +121,10 @@ sSwap st = let [b,a] = take 2 $ stack st
 -- | Pops the top value and pushes 1 if it is 0, or 0 otherwise.
 -- '!'
 sNot :: State -> State
-sNot st@(State {stack = []}) = st { stack = [1] }
-sNot st = let a = head $ stack st
-          in st { stack = (if a == 0
-                             then 1
-                             else 0) : tail (stack st) }
+sNot st@(State {stack = []})     = st { stack = [1] }
+sNot st@(State {stack = (a:rs)}) = st { stack = (if a == 0
+                                                   then 1
+                                                   else 0) : rs }
 
 -- | Pops a value from the stack and discards it.
 -- '$'
@@ -144,8 +134,8 @@ sPop st = st { stack = drop 1 $ stack st }
 -- | Duplicates the top value on the stack.
 -- ':'
 sDup :: State -> State
-sDup st@(State {stack = []}) = st { stack = [0] }
-sDup st = st { stack = head (stack st) : stack st }
+sDup st@(State {stack = []})       = st { stack = [0] }
+sDup st@(State {stack = rs@(a:_)}) = st { stack = a : rs }
 
 -- -----------------------------------------------------------------------------
 -- Pointer operations.
@@ -176,23 +166,21 @@ pSetDir pDir st = st { dir = pDir }
 
 -- | Pop a value, start moving left if it is non-zero, otherwise move right.
 -- '_'
-pCheckLeft :: State -> State
-pCheckLeft st@(State {stack = []}) = pRight st
-pCheckLeft st = let a = head . stack $ st
-                in st { stack = tail . stack $ st
-                      , dir   = if a == 0
-                                  then PRight
-                                  else PLeft }
+pHorzIf :: State -> State
+pHorzIf st@(State {stack = []}) = pRight st
+pHorzIf st@(State {stack = (0:rs)}) = st { stack = rs
+                                         , dir   = PRight }
+pHorzIf st@(State {stack = (_:rs)}) = st { stack = rs
+                                         , dir   = PLeft }
 
 -- | Pop a value, start moving up if it is non-zero, otherwise move down.
 -- '|'
-pCheckUp :: State -> State
-pCheckUp st@(State {stack = []}) = pDown st
-pCheckUp st = let a = head . stack $ st
-                in st { stack = tail . stack $ st
-                      , dir   = if a == 0
-                                  then PDown
-                                  else PLeft }
+pVertIf :: State -> State
+pVertIf st@(State {stack = []})     = pDown st
+pVertIf st@(State {stack = (0:rs)}) = st { stack = rs
+                                         , dir   = PDown }
+pVertIf st@(State {stack = (_:rs)}) = st { stack = rs
+                                         , dir   = PUp }
 
 -- | Start moving in a random direction.
 -- '?'
@@ -211,15 +199,14 @@ pRand st = liftM (`pSetDir` st)
 -- | Pops the top value and prints it as an Int (Word8).
 -- '.'
 sPrintInt :: State -> IO State
-sPrintInt st@(State {stack = []}) = putStr "0" >> return st
-sPrintInt st = putStr (show . head . stack $ st) >> return (sPop st)
+sPrintInt st@(State {stack = []})    = putStr "0" >> return st
+sPrintInt st@(State {stack = (a:_)}) = putStr (show a) >> return (sPop st)
 
 -- | Pops the top value and prints it as a Char.
 -- ','
 sPrintChar :: State -> IO State
-sPrintChar st@(State {stack = []}) = putStr "\0" >> return st
-sPrintChar st = putStr [intToChar . head . stack $ st]
-                >> return (sPop st)
+sPrintChar st@(State {stack = []})    = putStr "\0" >> return st
+sPrintChar st@(State {stack = (a:_)}) = putStr [intToChar a] >> return (sPop st)
 
 -- | Ask a user to input an integer value mod 256.
 -- '&'
@@ -241,11 +228,10 @@ sInputChar st = getChar >>= \c -> return st { stack = charToInt c : stack st }
 -- | Put a Char into the playfield.
 -- 'p'
 fPut :: State -> IO State
-fPut st@(State {stack = []   }) = fPut' st 0 0 0
-fPut st@(State {stack = [y]  }) = fPut' st y 0 0
-fPut st@(State {stack = [y,x]}) = fPut' st y x 0
-fPut st = let [y,x,v] = take 3 $ stack st
-          in fPut' st y x $ intToWord v
+fPut st@(State {stack = []   })     = fPut' st 0 0 0
+fPut st@(State {stack = [y]  })     = fPut' st y 0 0
+fPut st@(State {stack = [y,x]})     = fPut' st y x 0
+fPut st@(State {stack = (y:x:v:_)}) = fPut' st y x $ intToWord v
 
 -- | Helper function to fPut.
 fPut' :: State -> Int32 -> Int32 -> Word8 -> IO State
@@ -258,10 +244,9 @@ fPut' st y x v = if x > 79 || x < 0 || y > 24 || y < 0
 -- | Get a Char out of the playfield.
 -- 'g'
 fGet :: State -> IO State
-fGet st@(State {stack = [] }) = fGet' st 0 0
-fGet st@(State {stack = [y]}) = fGet' st y 0
-fGet st = let [y,x] = take 2 $ stack st
-          in fGet' st y x
+fGet st@(State {stack = [] })     = fGet' st 0 0
+fGet st@(State {stack = [y]})     = fGet' st y 0
+fGet st@(State {stack = (y:x:_)}) = fGet' st y x
 
 -- | Helper function to fGet.
 fGet' :: State -> Int32 -> Int32 -> IO State

@@ -13,7 +13,7 @@ module Befunge.Data
     ( Word8
     , Int32
     , State(..)
-    , showState
+    , showState       -- :: State -> IO String
     , newState        -- :: IO State
     , newStateFromArr -- :: IOUArray (Int,Int) Word8 -> IO State
     , StateError(..)  -- Instances: Show
