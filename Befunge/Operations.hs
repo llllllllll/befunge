@@ -63,16 +63,16 @@ sPush n st = st { stack = n : stack st }
 -- | Adds the top 2 elements on the stack pushing the result.
 -- '+'
 sAdd :: State -> State
-sAdd st@(State {stack = [] }) = st { stack = [0] }
-sAdd st@(State {stack = [_]}) = st
+sAdd st@(State {stack = [] }) = st { stack = [0]   }
+sAdd st@(State {stack = [n]}) = st { stack = [0,n] }
 sAdd st = let [b,a] = take 2 $ stack st
           in st { stack = a + b : drop 2 (stack st) }
 
 -- | Subtracts the top 2 elements on the stack pushing the result.
 -- '-'
 sSub :: State -> State
-sSub st@(State {stack = [] }) = st { stack = [0] }
-sSub st@(State {stack = [_]}) = st
+sSub st@(State {stack = [] }) = st { stack = [0]   }
+sSub st@(State {stack = [n]}) = st { stack = [n,n] }
 sSub st = let [b,a] = take 2 $ stack st
           in st { stack = b - a : drop 2 (stack st) }
 
@@ -107,12 +107,12 @@ sMod st = let [b,a] = take 2 $ stack st
 -- | Pushes 1 if b > a otherwise pushes 0.
 -- '`'
 sGT  :: State -> State
-sGT  st@(State {stack = [] }) = st
-sGT  st@(State {stack = [n]}) = st { stack = if n > 0
+sGT  st@(State {stack = [] }) = st { stack = [0] }
+sGT  st@(State {stack = [n]}) = st { stack = if 0 > n
                                                then [1]
                                                else [0] }
 sGT  st = let [b,a] = take 2 $ stack st
-          in st { stack = (if b > a
+          in st { stack = (if a > b
                              then 1
                              else 0) : drop 2 (stack st) }
 
@@ -139,8 +139,7 @@ sNot st = let a = head $ stack st
 -- | Pops a value from the stack and discards it.
 -- '$'
 sPop :: State -> State
-sPop st@(State {stack = []}) = st
-sPop st = st { stack = tail $ stack st }
+sPop st = st { stack = drop 1 $ stack st }
 
 -- | Duplicates the top value on the stack.
 -- ':'
@@ -198,7 +197,7 @@ pCheckUp st = let a = head . stack $ st
 -- | Start moving in a random direction.
 -- '?'
 pRand :: State -> IO State
-pRand st = liftM (flip pSetDir st)
+pRand st = liftM (`pSetDir` st)
            (getDir <$> getStdRandom (randomR (0 :: Int,3 :: Int)))
   where
       getDir 0 = PUp

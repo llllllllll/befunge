@@ -15,19 +15,23 @@ import Befunge.Data
 import Befunge.Operations
 
 import Control.Applicative ((<$>))
+import Control.Arrow       (second)
+import Control.Monad       ((<=<))
 import Data.Array.IO       (IOUArray,newArray,writeArray)
 
 -- | Reads a new state from a string.
 stateFromSource :: String -> IO State
 stateFromSource cs = newArray ((0,0),(24,79)) 32
-                     >>= iter 0 0 cs
+                     >>= \arr -> iter arr 0 0
+                                 (concatMap (extend 80) $ take 25 $ lines cs)
                      >>= newStateFromArr
   where
-      iter _ _ [] arr        = return arr
-      iter _ y ('\n':cs) arr = iter 0 (y + 1) cs arr
-      iter x y (c:cs) arr    = writeArray arr (y,x) (charToWord c) >>
-                               iter (x + 1) y cs arr
+      extend n cs         = take n $ cs ++ repeat ' '
+      iter arr _ _ []     = return arr
+      iter arr 80 y cs    = iter arr 0 (y + 1) cs
+      iter arr x y (c:cs) = writeArray arr (y,x) (charToWord c)
+                            >> iter arr (x + 1) y cs
 
--- | Reads a new state from a file.
+-- | Reads a new 'State' from a file.
 stateFromFile :: FilePath -> IO State
-stateFromFile fl = readFile fl >>= stateFromSource
+stateFromFile = stateFromSource <=< readFile
