@@ -90,7 +90,7 @@ and it encounters the right edge, it will wrap around to the left side. This
 property is true reading in any direction.
 
 
-## Flow of Control ###
+### Flow of Control ###
 Befunge-93 uses pointer direction to influence the flow of control. For this
 reason, there are 2 types of boolean checks, the horizontal if `_`, and the
 vertical if `|`. The if statements work by popping the top element of the stack
