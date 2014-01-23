@@ -1,0 +1,163 @@
+	Wed Jan 22 22:59 2014 Time and Allocation Profiling Report  (Final)
+
+	   profiling +RTS -p -RTS txt/hello txt/mycology.b98
+
+	total time  =        0.02 secs   (24 ticks @ 1000 us, 1 processor)
+	total alloc =   9,961,200 bytes  (excludes profiling overheads)
+
+COST CENTRE            MODULE             %time %alloc
+
+stateFromSource.iter   Befunge.Parser      20.8   20.3
+incPointer             Main                16.7   15.7
+parseCommand           Main                12.5    8.3
+stateFromFile          Befunge.Parser       8.3   12.9
+readNext               Main                 8.3   19.5
+readNext.\             Main                 8.3    0.7
+stateFromSource.\      Befunge.Parser       4.2    6.9
+stateFromSource.extend Befunge.Parser       4.2    2.5
+sPrintChar             Befunge.Operations   4.2    5.2
+fPut'                  Befunge.Operations   4.2    0.0
+playfield              Befunge.Data         4.2    0.0
+CAF                    Main                 4.2    0.0
+readAll                Main                 0.0    2.3
+
+
+                                                                         individual     inherited
+COST CENTRE                   MODULE                   no.     entries  %time %alloc   %time %alloc
+
+MAIN                          MAIN                      57           0    0.0    0.1   100.0  100.0
+ CAF                          Main                     113           0    4.2    0.0   100.0   99.5
+  main                        Main                     114           1    0.0    0.1    95.8   99.5
+   main.\                     Main                     115           1    0.0    0.0    95.8   99.4
+    readAll                   Main                     123        3155    0.0    2.3    58.3   55.8
+     incPointer               Main                     132        3153   16.7   12.4    16.7   12.4
+      loc                     Befunge.Data             136        3150    0.0    0.0     0.0    0.0
+     readNext                 Main                     124        3153    8.3   19.5    41.7   41.1
+      readNext.\              Main                     144         416    0.0    0.6     0.0    1.2
+       sPush                  Befunge.Operations       146         383    0.0    0.4     0.0    0.4
+        stack                 Befunge.Data             154         381    0.0    0.0     0.0    0.0
+       charToWord             Befunge.Data             145           0    0.0    0.3     0.0    0.3
+      readNext.\              Main                     127        2737    8.3    0.7    29.2   20.4
+       parseCommand           Main                     128        2737   12.5    8.3    20.8   19.7
+        fGet                  Befunge.Operations       225           1    0.0    0.0     0.0    0.0
+         fGet'                Befunge.Operations       227           1    0.0    0.0     0.0    0.0
+          fGet'.\             Befunge.Operations       230           1    0.0    0.0     0.0    0.0
+           stack              Befunge.Data             233           1    0.0    0.0     0.0    0.0
+          intToWord           Befunge.Data             229           0    0.0    0.0     0.0    0.0
+          playfield           Befunge.Data             228           1    0.0    0.0     0.0    0.0
+        fPut                  Befunge.Operations       216           2    0.0    0.0     4.2    0.0
+         fPut.v               Befunge.Operations       232           2    0.0    0.0     0.0    0.0
+         intToWord            Befunge.Data             231           0    0.0    0.0     0.0    0.0
+         fPut.y               Befunge.Operations       221           2    0.0    0.0     0.0    0.0
+         fPut.(...)           Befunge.Operations       219           2    0.0    0.0     0.0    0.0
+          stack               Befunge.Data             220           2    0.0    0.0     0.0    0.0
+         fPut.x               Befunge.Operations       218           2    0.0    0.0     0.0    0.0
+         fPut'                Befunge.Operations       217           2    4.2    0.0     4.2    0.0
+          stack               Befunge.Data             226           2    0.0    0.0     0.0    0.0
+          intToWord           Befunge.Data             224           0    0.0    0.0     0.0    0.0
+          playfield           Befunge.Data             222           2    0.0    0.0     0.0    0.0
+        sGT                   Befunge.Operations       210           3    0.0    0.0     0.0    0.0
+         stack                Befunge.Data             215           2    0.0    0.0     0.0    0.0
+         sGT.b                Befunge.Operations       214           2    0.0    0.0     0.0    0.0
+         sGT.(...)            Befunge.Operations       212           2    0.0    0.0     0.0    0.0
+          stack               Befunge.Data             213           2    0.0    0.0     0.0    0.0
+         sGT.a                Befunge.Operations       211           2    0.0    0.0     0.0    0.0
+        sSwap                 Befunge.Operations       204           3    0.0    0.0     0.0    0.0
+         stack                Befunge.Data             209           2    0.0    0.0     0.0    0.0
+         sSwap.b              Befunge.Operations       208           2    0.0    0.0     0.0    0.0
+         sSwap.(...)          Befunge.Operations       206           2    0.0    0.0     0.0    0.0
+          stack               Befunge.Data             207           2    0.0    0.0     0.0    0.0
+         sSwap.a              Befunge.Operations       205           1    0.0    0.0     0.0    0.0
+        sNot                  Befunge.Operations       199         101    0.0    0.3     0.0    0.3
+         stack                Befunge.Data             202         101    0.0    0.0     0.0    0.0
+         sNot.a               Befunge.Operations       200         101    0.0    0.0     0.0    0.0
+          stack               Befunge.Data             201         101    0.0    0.0     0.0    0.0
+        pCheckUp              Befunge.Operations       196           1    0.0    0.0     0.0    0.0
+         pDown                Befunge.Operations       197           0    0.0    0.0     0.0    0.0
+          pSetDir             Befunge.Operations       198           1    0.0    0.0     0.0    0.0
+        sSub                  Befunge.Operations       190           5    0.0    0.0     0.0    0.0
+         stack                Befunge.Data             195           5    0.0    0.0     0.0    0.0
+         sSub.a               Befunge.Operations       194           5    0.0    0.0     0.0    0.0
+         sSub.(...)           Befunge.Operations       192           5    0.0    0.0     0.0    0.0
+          stack               Befunge.Data             193           5    0.0    0.0     0.0    0.0
+         sSub.b               Befunge.Operations       191           5    0.0    0.0     0.0    0.0
+        sDup                  Befunge.Operations       184         314    0.0    0.5     0.0    0.5
+         stack                Befunge.Data             185         603    0.0    0.0     0.0    0.0
+        sAdd                  Befunge.Operations       176          21    0.0    0.1     0.0    0.1
+         stack                Befunge.Data             187          20    0.0    0.0     0.0    0.0
+         sAdd.b               Befunge.Operations       180          21    0.0    0.0     0.0    0.0
+         sAdd.(...)           Befunge.Operations       178          21    0.0    0.0     0.0    0.0
+          stack               Befunge.Data             179          21    0.0    0.0     0.0    0.0
+         sAdd.a               Befunge.Operations       177          21    0.0    0.0     0.0    0.0
+        pCheckLeft            Befunge.Operations       173         325    0.0    0.7     0.0    0.9
+         pRight               Befunge.Operations       188           0    0.0    0.0     0.0    0.0
+          pSetDir             Befunge.Operations       189           1    0.0    0.0     0.0    0.0
+         stack                Befunge.Data             186         323    0.0    0.0     0.0    0.0
+         pCheckLeft.a         Befunge.Operations       174         324    0.0    0.2     0.0    0.2
+          stack               Befunge.Data             175         324    0.0    0.0     0.0    0.0
+        sPop                  Befunge.Operations       170           9    0.0    0.0     0.0    0.0
+         stack                Befunge.Data             171           9    0.0    0.0     0.0    0.0
+        pUp                   Befunge.Operations       168           0    0.0    0.0     0.0    0.0
+         pSetDir              Befunge.Operations       169          17    0.0    0.0     0.0    0.0
+        sPrintInt             Befunge.Operations       164           8    0.0    0.1     0.0    0.1
+         sPop                 Befunge.Operations       166           8    0.0    0.0     0.0    0.0
+          stack               Befunge.Data             172           8    0.0    0.0     0.0    0.0
+         stack                Befunge.Data             165           8    0.0    0.0     0.0    0.0
+        incPointer            Main                     162         840    0.0    3.3     0.0    3.3
+         loc                  Befunge.Data             163         839    0.0    0.0     0.0    0.0
+        sMul                  Befunge.Operations       156           4    0.0    0.0     0.0    0.0
+         stack                Befunge.Data             203           2    0.0    0.0     0.0    0.0
+         sMul.a               Befunge.Operations       161           4    0.0    0.0     0.0    0.0
+         sMul.(...)           Befunge.Operations       159           4    0.0    0.0     0.0    0.0
+          stack               Befunge.Data             160           4    0.0    0.0     0.0    0.0
+         sMul.b               Befunge.Operations       158           4    0.0    0.0     0.0    0.0
+        sPush                 Befunge.Operations       155          75    0.0    0.1     0.0    0.1
+         stack                Befunge.Data             157          72    0.0    0.0     0.0    0.0
+        sPrintChar            Befunge.Operations       147         396    4.2    5.2     4.2    5.9
+         sPop                 Befunge.Operations       152         396    0.0    0.4     0.0    0.4
+          stack               Befunge.Data             153         391    0.0    0.0     0.0    0.0
+         stack                Befunge.Data             150         396    0.0    0.0     0.0    0.0
+         intToChar            Befunge.Data             149           0    0.0    0.2     0.0    0.2
+        parseCommand.\        Main                     143          33    0.0    0.0     0.0    0.0
+        pLeft                 Befunge.Operations       141           0    0.0    0.0     0.0    0.1
+         pSetDir              Befunge.Operations       142         124    0.0    0.1     0.0    0.1
+        pDown                 Befunge.Operations       138           0    0.0    0.0     0.0    0.0
+         pSetDir              Befunge.Operations       139          34    0.0    0.0     0.0    0.0
+        pRight                Befunge.Operations       134           0    0.0    0.0     0.0    0.1
+         pSetDir              Befunge.Operations       135         230    0.0    0.1     0.0    0.1
+      loc                     Befunge.Data             126        3153    0.0    0.0     0.0    0.0
+      playfield               Befunge.Data             125        3153    4.2    0.0     4.2    0.0
+    stateFromFile             Befunge.Parser           117           0    8.3   12.9    37.5   43.6
+     stateFromSource          Befunge.Parser           118           2    0.0    0.3    29.2   30.7
+      stateFromSource.\       Befunge.Parser           119           2    4.2    6.9    29.2   30.4
+       newStateFromArr        Befunge.Data             122           2    0.0    0.0     0.0    0.0
+       stateFromSource.extend Befunge.Parser           121          30    4.2    2.5     4.2    2.5
+       stateFromSource.iter   Befunge.Parser           120        2430   20.8   20.3    20.8   20.9
+        charToWord            Befunge.Data             131           0    0.0    0.7     0.0    0.7
+ CAF                          Befunge.Data             112           0    0.0    0.0     0.0    0.0
+  intToWord                   Befunge.Data             223           1    0.0    0.0     0.0    0.0
+  wordToInt                   Befunge.Data             151           1    0.0    0.0     0.0    0.0
+  intToChar                   Befunge.Data             148           1    0.0    0.0     0.0    0.0
+  charToWord                  Befunge.Data             130           1    0.0    0.0     0.0    0.0
+  wordToChar                  Befunge.Data             129           1    0.0    0.0     0.0    0.0
+ CAF                          Befunge.Operations       111           0    0.0    0.0     0.0    0.0
+  pUp                         Befunge.Operations       167           1    0.0    0.0     0.0    0.0
+  pLeft                       Befunge.Operations       140           1    0.0    0.0     0.0    0.0
+  pDown                       Befunge.Operations       137           1    0.0    0.0     0.0    0.0
+  pRight                      Befunge.Operations       133           1    0.0    0.0     0.0    0.0
+ CAF                          Befunge.Parser           110           0    0.0    0.0     0.0    0.0
+  stateFromFile               Befunge.Parser           116           1    0.0    0.0     0.0    0.0
+ CAF                          GHC.IO.Encoding           97           0    0.0    0.0     0.0    0.0
+ CAF                          Text.Read.Lex             91           0    0.0    0.0     0.0    0.0
+ CAF                          GHC.Event.Thread          90           0    0.0    0.0     0.0    0.0
+ CAF                          GHC.Conc.Signal           89           0    0.0    0.0     0.0    0.0
+ CAF                          GHC.IO.Handle.FD          84           0    0.0    0.3     0.0    0.3
+ CAF                          GHC.IO.Encoding.Iconv     78           0    0.0    0.0     0.0    0.0
+ CAF                          System.Posix.Internals    75           0    0.0    0.0     0.0    0.0
+ CAF                          GHC.Event.EPoll           74           0    0.0    0.0     0.0    0.0
+ CAF                          GHC.Event.Internal        73           0    0.0    0.0     0.0    0.0
+ CAF                          GHC.IO.FD                 70           0    0.0    0.0     0.0    0.0
+ CAF                          GHC.Event.Control         68           0    0.0    0.0     0.0    0.0
+  main                        Main                     181           0    0.0    0.0     0.0    0.0
+   main.\                     Main                     182           0    0.0    0.0     0.0    0.0
+    stateFromFile             Befunge.Parser           183           0    0.0    0.0     0.0    0.0
