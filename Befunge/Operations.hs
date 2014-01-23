@@ -64,22 +64,22 @@ sPush n st = st { stack = n : stack st }
 -- '+'
 sAdd :: State -> State
 sAdd st@(State {stack = [] })      = st { stack = [0]   }
-sAdd st@(State {stack = [n]})      = st { stack = [0,n] }
+sAdd st@(State {stack = [n]})      = st { stack = [n] }
 sAdd st@(State {stack = (b:a:rs)}) = st { stack = a + b : rs }
 
 -- | Subtracts the top 2 elements on the stack pushing the result.
 -- '-'
 sSub :: State -> State
 sSub st@(State {stack = [] })      = st { stack = [0]   }
-sSub st@(State {stack = [n]})      = st { stack = [n,n] }
-sSub st@(State {stack = (b:a:rs)}) = st { stack = b - a : rs }
+sSub st@(State {stack = [n]})      = st { stack = [-n] }
+sSub st@(State {stack = (b:a:rs)}) = st { stack = a - b : rs }
 
 -- | Multiplies the top 2 elements on the stack pushing the result.
 -- '*'
 sMul :: State -> State
 sMul st@(State {stack = [] })      = st { stack = [0] }
 sMul st@(State {stack = [_]})      = st { stack = [0] }
-sMul st@(State {stack = (b:a:rs)}) = st { stack = b * a : rs }
+sMul st@(State {stack = (b:a:rs)}) = st { stack = a * b : rs }
 
 -- | Divides the top 2 elements on the stack pushing the result.
 -- '/'
@@ -87,7 +87,7 @@ sDiv :: State -> Either StateError State
 sDiv st@(State {stack = [] })      = Left $ DivByZeroError (loc st)
 sDiv st@(State {stack = [_]})      = Left $ DivByZeroError (loc st)
 sDiv st@(State {stack = (0:_:_)})  = Left $ DivByZeroError (loc st)
-sDiv st@(State {stack = (b:a:rs)}) = Right st { stack = b `div` a : rs }
+sDiv st@(State {stack = (b:a:rs)}) = Right st { stack = a `div` b : rs }
 
 -- | Mods the top 2 elements on the stack pushing the result.
 -- '%'
@@ -95,7 +95,7 @@ sMod :: State -> Either StateError State
 sMod st@(State {stack = [] })      = Left $ DivByZeroError (loc st)
 sMod st@(State {stack = [_]})      = Left $ DivByZeroError (loc st)
 sMod st@(State {stack = (0:_:_)})  = Left $ DivByZeroError (loc st)
-sMod st@(State {stack = (b:a:rs)}) = Right st { stack = b `mod` a : rs }
+sMod st@(State {stack = (b:a:rs)}) = Right st { stack = a `mod` b : rs }
 
 -- | Pushes 1 if b > a otherwise pushes 0.
 -- '`'

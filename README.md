@@ -1,14 +1,15 @@
 befunge
 =======
 
-A Befunge-93 interpreter in haskell by Joe Jevnik, licensed under the GPL v2.
+A Befunge-93 interpreter written in haskell by Joe Jevnik, licensed under the
+GPL v2.
 
 
 ### What is Befunge-93? ###
 
 Befunge-93 is a stack based esoteric programming language. What makes Befunge
 interesting when compared to other simmilar languages is that is not read
-linearly. In Befunge-93, the program's state include a pointer into a
+linearly. In Befunge-93, the program's state includes a pointer into a
 "playfield", and different operations can change the direction that the pointer
 is going. Befunge-93 is also self-modifying and referencing. Source code must
 fit into one standard screen, 80x25, for it to be read, anything outside of that

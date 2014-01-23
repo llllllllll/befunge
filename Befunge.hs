@@ -114,6 +114,8 @@ main = getArgs
                     ("-c":ps) -> mapM_ forkBefunge ps
                     _ -> mapM_ (readAll . Right <=< stateFromFile) as
 
+-- | Forks a befunge program into its own thread using forkFinally and MVar ()
+-- writing to hold the main thread open until all the children have terminated.
 forkBefunge :: FilePath -> IO (MVar ())
 forkBefunge b = do
     lock <- newEmptyMVar
