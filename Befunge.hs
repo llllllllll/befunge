@@ -142,8 +142,12 @@ warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
 helpString :: String
 helpString =
     "Usage:\n\n\
-    runbefunge [OPTION]... [SOURCE-FILE]...\n\n\
-To run a befunge-93 program, run the interpreter like so:\n\n\
+    runbefunge [OPTION]... [SOURCE-FILE]...\n\nOptions:\n    \
+-c           Run the list programs concurrently.\n    -d           \
+Run the programs as a doublefunge instead of befugnge-93.\n\
+                   This may be paired with 'c' to run doublefunge concurrently.\
+\n    -h --help    Displays this message.\n\n    -v --version Prints version \
+information.\n\nTo run a befunge-93 program, run the interpreter like so:\n\n\
     runbefunge my_prog.bf\n\n\
 where my_prog.bf is the path to the program you wish to run.\n\n\
 Alternativly, you may run multiple files at once by passing them in the order\n\
