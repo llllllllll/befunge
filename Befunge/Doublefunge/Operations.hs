@@ -1,5 +1,5 @@
 -- |
--- Module      : Befunge.Operations
+-- Module      : Doublefunge.Operations
 -- Copyright   : Joe Jevnik 2013
 --
 -- License     : GPL-2
@@ -7,14 +7,14 @@
 -- Stability   : stable
 -- Portability : GHC
 --
--- All operations for my befunge-93 interpreter.
+-- All operations for my double interpreter.
 -- Stack operations are prefixed with an s. I.E. to push to the stack use sPush
 -- or to add onto the stack, use sAdd.
 -- Pointer operations are prefixed with p. I.E. to set the pointer right, use
 -- pRight or to set it down use pDown.
 -- Functions that act on the playfield are prefixed f. fPut and fGet.
 
-module Befunge.Operations
+module Befunge.Doublefunge.Operations
     ( sPush      -- :: Word8 -> State -> State
     , sAdd       -- :: State -> State
     , sSub       -- :: State -> State
@@ -41,7 +41,7 @@ module Befunge.Operations
     , fGet       -- :: State -> IO State
     )  where
 
-import Befunge.Data
+import Befunge.Doublefunge.Data
 
 import Control.Applicative ((<$>))
 import Control.Monad       (liftM)
@@ -162,25 +162,40 @@ pRight = pSetDir PRight
 
 -- | Helper function to shorten the other pSets.
 pSetDir :: PDirection -> State -> State
-pSetDir pDir st = st { dir = pDir }
+pSetDir dir st@(State{currPointer = Primary}) = st { pDir = dir }
+pSetDir dir st                                = st { sDir = dir }
 
 -- | Pop a value, start moving left if it is non-zero, otherwise move right.
 -- '_'
 pHorzIf :: State -> State
 pHorzIf st@(State {stack = []}) = pRight st
-pHorzIf st@(State {stack = (0:rs)}) = st { stack = rs
-                                         , dir   = PRight }
-pHorzIf st@(State {stack = (_:rs)}) = st { stack = rs
-                                         , dir   = PLeft }
+pHorzIf st@(State {currPointer = Primary,stack = (0:rs)}) = st { stack = rs
+                                                               , pDir   = PRight
+                                                               }
+pHorzIf st@(State {stack = (0:rs)}) =                       st { stack = rs
+                                                               , sDir   = PRight
+                                                               }
+pHorzIf st@(State {currPointer = Primary,stack = (_:rs)}) = st { stack = rs
+                                                               , pDir   = PLeft
+                                                               }
+pHorzIf st@(State {stack = (_:rs)}) =                       st { stack = rs
+                                                               , sDir   = PLeft
+                                                               }
 
 -- | Pop a value, start moving up if it is non-zero, otherwise move down.
 -- '|'
 pVertIf :: State -> State
 pVertIf st@(State {stack = []})     = pDown st
-pVertIf st@(State {stack = (0:rs)}) = st { stack = rs
-                                         , dir   = PDown }
-pVertIf st@(State {stack = (_:rs)}) = st { stack = rs
-                                         , dir   = PUp }
+pVertIf st@(State {currPointer = Primary,stack = (0:rs)}) = st { stack = rs
+                                                               , pDir   = PDown
+                                                               }
+pVertIf st@(State {stack = (0:rs)}) =                       st { stack = rs
+                                                               , pDir   = PDown
+                                                               }
+pVertIf st@(State {currPointer = Primary,stack = (_:rs)}) = st { stack = rs
+                                                               , pDir   = PUp }
+pVertIf st@(State {stack = (_:rs)}) =                       st { stack = rs
+                                                               , sDir   = PUp }
 
 -- | Start moving in a random direction.
 -- '?'
@@ -214,7 +229,9 @@ sInputInt :: State -> IO (Either StateError State)
 sInputInt st = readMaybe . (:[]) <$> getChar >>= \n ->
                case n of
                    Nothing -> return $ Left $ InvalidInputError
-                              (maybe ' ' intToChar n) (loc st)
+                              (maybe ' ' intToChar n) $ case currPointer st of
+                                                            Primary -> pLoc st
+                                                            _       -> sLoc st
                    Just v  -> return $ Right st { stack = v : stack st }
 
 -- | Ask a user to input a Char and push its ASCII value.
@@ -260,5 +277,6 @@ fGet' st y x = if x > 79 || x < 0 || y > 24 || y < 0
 -- Errors.
 
 -- | Throws a DivByZeroError.
-throwDivByZeroError :: State -> Either StateError State
-throwDivByZeroError = Left . DivByZeroError . loc
+throwDivByZeroError st@(State{currPointer = Primary}) = Left $ DivByZeroError
+                                                        $ pLoc st
+throwDivByZeroError st = Left . DivByZeroError . sLoc $ st

@@ -1,9 +1,11 @@
 befunge
 =======
 
-A Befunge-93 interpreter written in haskell by Joe Jevnik, licensed under the
-GPL v2.
+A Befunge-93 and doublefunge interpreter written in haskell by Joe Jevnik,
+licensed under the GPL v2.
 
+Befunge-93
+----------
 
 ### What is Befunge-93? ###
 
@@ -175,12 +177,129 @@ The functions to interact with stdout are:
 
 ### Sources ###
 
-[esolangs][]
+[Esolangs Wiki][], [Catseye language spec][]
 
-[catseye][]
+[Esolangs Wiki]:http://esolangs.org/wiki/Befunge
+[Catseye language spec]: https://github.com/catseye/Befunge-93/blob/master/doc/Befunge-93.markdown
 
-[command summary][]
+Doublefunge:
+------------
 
-[esolangs]:        http://esolangs.org/wiki/Befunge
-[catseye]:         http://catseye.tc/node/Befunge-93
-[command summary]: https://github.com/catseye/Befunge-93/blob/master/doc/Befunge-93.markdown
+### What is Doublefunge? ###
+
+While implementing this interpreter, I had an idea for an extension that I now
+call doublefunge (please contact me if this name means something different or
+the concept goes by another name). The main difference with doublefunge is that
+you now have 2 pointers into the playfield. This is not the same as running the
+same befunge-93 program twice because the secondary pointer starts at (24,79)
+moving left, and they both share the same playfield and stack. Doublefunge
+programs should use the .df file extension to show that they are not intended
+for a befunge-93 interpreter.
+
+### How the Secondary Pointer Interacts with the Playfield ###
+
+When running a doublefunge program, the primary pointer always has precedence
+over the secondary. For example, at the start of a program, the first thing done
+will be to read and evaluate the command at (0,0), the location of the primary
+pointer, then read and evaluate the command at (24,79), the location of the
+secondary pointer. Also, if the value read by the primary pointer is `9`, and
+the value read by the secondary pointer is `5`, because of the precedence, the
+stack will first push `9` and then push `5`.
+
+### String Mode ###
+
+Although the primary and secondary pointers share the stack, they each have
+their own string mode. This means that when the primary pointer encounters
+a `"` command, only the primary pointer will begin to read the ASCII values
+into the stack, unless of course the secondary pointer is already in string mode
+itself. The primary pointer will then stay in string mode until it reads a `"`.
+This means that the secondary pointer may modify the contents of the string
+while it is being read.
+
+### Halting ###
+A doublefunge is the same as befunge-93 with respect to terminating. As soon as
+the terminate operator `@` is read, the program will exit. It does not matter if
+this command is read by the primary or seconday pointer. Also, if the primary
+pointer reads the terminate command, the value at the second pointer will never
+be evaluated.
+
+### Examples ###
+
+In this example, we see that the two pointers share the stack, and the order in
+which things are evaluated. We also see that the output would be very different
+if run through a befunge-93 interpreter.
+
+    >5+:. 52*"pot"52*,,,,,                                                         @
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                ,,,,,,,"bottom"*52                                                5<
+
+When run through the traditional befunge-93 interpreter with
+`runbefunge example.df` we get the following output:
+
+    5
+    top
+
+However, when run through the proper interpreter with the `-d` flag, we get:
+
+    10
+    top
+    bottom
+
+This is because without the second pointer, we never push the 5 to add to the
+other 5, and we never push and print the "bottom" string.
+
+Another example is a flip flop program. This shows how the two pointers can both
+modify the playfield for eachother:
+
+    52*"pilf",,,,,
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    >                                                                    99*64*+50pv
+    ^p05+*99*65                                                                    <
+
+This program when run with `runbefunge string.df` will infinitly print `flip` on
+new lines. When run with `runbefunge -d string.df`, the secondary pointer will
+change the 'i' to an 'o' and will print alternating `flip` and `flop` on new
+lines.

@@ -13,6 +13,7 @@
 
 module Main where
 
+import Befunge.Doublefunge (runDoublefunge)
 import Befunge.Data
 import Befunge.Operations
 import Befunge.Parser
@@ -102,17 +103,23 @@ incPointer (Right st@(State {dir = PRight})) =
     Right st { loc = second (+ 1) $ loc st }
 
 main :: IO ()
-main = getArgs
-       >>= \as -> case as of
-                    []  -> putStrLn "Usage: runbefunge [FILE]"
-                    [n] | n `elem` ["-h","--help"]
-                            -> putStrLn helpString
-                        | n `elem` ["-v","--version"]
-                            -> putStrLn "runbefunge version 1.0\nBy Joe Jevnik"
-                        | otherwise -> void $ stateFromFile n
-                                       >>= readAll . Right
-                    ("-c":ps) -> mapM_ forkBefunge ps
-                    _ -> mapM_ (readAll . Right <=< stateFromFile) as
+main = getArgs >>= runBefunge
+
+-- | Parses the args.
+runBefunge :: [String] -> IO ()
+runBefunge [] = putStrLn "Usage: runbefunge [FILE]"
+runBefunge [p]
+    | p `elem` ["-h","--help"]    = putStrLn helpString
+    | p `elem` ["-v","--version"] = putStrLn versionString
+    | otherwise = void $ stateFromFile p >>= readAll . Right
+runBefunge as
+    | all (`notElem` ["-cd","-dc","-c","-d"]) as
+        = mapM_ (readAll . Right <=< stateFromFile) as
+    | all (`notElem` ["-cd","-dc","-d"]) as && "-c" `elem` as
+        = mapM_ forkBefunge as
+    | any (`elem` ["-cd","-dc"]) as = runDoublefunge $ "-c"
+                                      : filter (`notElem` ["-cd","-dc"]) as
+    | "-d" `elem` as = runDoublefunge $ filter (/= "-d") as
 
 -- | Forks a befunge program into its own thread using forkFinally and MVar ()
 -- writing to hold the main thread open until all the children have terminated.
@@ -123,17 +130,41 @@ forkBefunge b = do
                     (const $ putMVar lock ())
     return lock
 
+-- | The 'String' to be printed when the user invokes '-v' or '--version'.
+versionString :: String
+versionString =
+    "runbefunge 1.0.0 (24.1.2013)\n\
+Copyright (C) 2013 Joe Jevnik.\n\
+This is free software; see the source for copying conditions.  There is NO\n\
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
+
+-- | The 'String' to be printed when the user invokes '-h' or '--help'.
 helpString :: String
 helpString =
-    "Usage:\n\n    runbefunge [SOURCE-FILE]\n\nTo run a befunge-93 program, \
-run the interpreter like so:\n\n    runbefunge my_prog.bf\n\nwhere \
-my_prog.bf is the path to the program you wish to run.\n\nAlternativly, you \
-may run multiple files at once by passing them in the order\nin which you \
-would like them to be evaluated, for example:\n\n    runbefunge prog1.bf \
-prog2.bf\n\nwould run prog1.bf until its null character is reached and then \
-begin to run prog2.bf.\nFor this reason, it will not evaluate any programs \
-after reaching a program that does\nnot contain a '@' (terminating \
-character).\n\nOne can also run a set of befunge-93 programs concurrently by \
-passing the -c flag \nbefore a list like so:\n\n    runbefunge -c prog1.bf \
-prog2.bf\n\nWARNING: You may get butchered output as they will both print to \
-stdout together;\nhowever, only one will consume from stdin."
+    "Usage:\n\n\
+    runbefunge [OPTION]... [SOURCE-FILE]...\n\n\
+To run a befunge-93 program, run the interpreter like so:\n\n\
+    runbefunge my_prog.bf\n\n\
+where my_prog.bf is the path to the program you wish to run.\n\n\
+Alternativly, you may run multiple files at once by passing them in the order\n\
+in which you would like them to be evaluated, for example:\n\n\
+    runbefunge prog1.bf prog2.bf\n\n\
+would run prog1.bf until its null character is reached and then begin to run\n\
+prog2.bf. For this reason, it will not evaluate any programs after reaching a\n\
+program that does not contain a '@' (terminating character).\n\n\
+One can also run a set of befunge-93 programs concurrently by passing the '-c'\
+\nflag before a list like so:\n\n\
+    runbefunge -c prog1.bf prog2.bf\n\n\
+WARNING: You may get butchered output as they will both print to stdout\n\
+together; however, only one will consume from stdin.\n\n\
+This interpreter also will interpret doublefunge when passed the '-d' flag.\
+For\nexample:\n\n\
+    runbefunge -d my_prog.df\n\n\
+will interpret my_prog.df. Doublefunge is like befunge, but also has a second\n\
+instruction pointer that starts at (24,79) pointing left. This is called the\n\
+secondary pointer. The primary pointer always executes its command first, \
+before\nthe secondary, but otherwise behaves the same as the primary pointer. \
+Each\npointer has a string mode that is independant of the other, meaning that \
+if the\nprimary pointer enters string mode, the secondary pointer will still \
+read its\ncommands normally, unless of course the secondary pointer is also in \
+string\nmode."
